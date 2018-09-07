@@ -29,6 +29,9 @@
 #
 #
 
+######## GRPC Settings ########
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
 ######## SGX SDK Settings ########
 
 SGX_SDK ?= /opt/intel/sgxsdk
@@ -213,13 +216,46 @@ App/Enclave_u.o: App/Enclave_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-App/%.o: App/%.cpp
+
+
+#XXX start 
+
+#App/App.o: App/App.cpp
+#	@$(CXX) $(App_Cpp_Flags) -c $< -o $@
+#	@echo "CXX  <=  $<"
+
+#$(App_Name): App/Enclave_u.o $(App_Cpp_Objects)
+#	@$(CXX) $^  -o $@ $(App_Link_Flags)
+#	@echo "LINK =>  $@"
+
+App/App.o: App/App.cpp
 	@$(CXX) $(App_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(App_Name): App/Enclave_u.o $(App_Cpp_Objects)
-	@$(CXX) $^ -o $@ $(App_Link_Flags)
+# For grpc protobuf
+subdir = ./
+
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+#SOURCES = $(wildcard $(subdir)*.cc)
+#SRCOBJS = $(patsubst %.cc,%.o,$(SOURCES))
+CC = g++
+
+recommend.grpc.pb.o:
+	$(CC) -std=c++11 -I/usr/local/include -pthread -c App/recommend.grpc.pb.cc -o App/$@
+
+recommend.pb.o:
+	$(CC) -std=c++11 -I/usr/local/include -pthread -c App/recommend.pb.cc -o App/$@
+
+$(App_Name): App/Enclave_u.o $(App_Cpp_Objects) App/recommend.grpc.pb.o App/recommend.pb.o
+	@$(CXX) $^ -L/usr/local/lib `pkg-config --libs grpc++ grpc` -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -lprotobuf -lpthread -ldl -lssl   -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
+
+
+
+
+
+############# end
 
 .config_$(Build_Mode)_$(SGX_ARCH):
 	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*

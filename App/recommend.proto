@@ -1,0 +1,18 @@
+    syntax = "proto3";
+ 
+    message RecommendRequest
+    {
+        int32 gender = 1;
+        int32 age = 2;
+        int32 occupation = 3;
+    }
+ 
+    message RecommendResponse
+    {
+        int32 best_ad = 1;
+    }
+ 
+    service RecommendService {
+        rpc Recommend (RecommendRequest) returns (RecommendResponse);
+    }
+
