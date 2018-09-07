@@ -1,0 +1,5 @@
+GEN  =>  App/Enclave_u.c
+CC   <=  App/Enclave_u.c
+CXX  <=  App/App.cpp
+g++    -c -o App/recommend.grpc.pb.o App/recommend.grpc.pb.cc
+<builtin>: recipe for target 'App/recommend.grpc.pb.o' failed
