@@ -43,6 +43,36 @@
 #include "Enclave_u.h"
 
 #include <thread>
+#include <memory>
+
+#include <grpc++/grpc++.h>
+#include <grpc/grpc.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
+
+#include "recommend.grpc.pb.h"
+
+/* for GRPC */
+using grpc::Server;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::Status;
+
+class RecommendRequestImpl final : public RecommendService::Service {
+  Status Recommend(ServerContext* context, const RecommendRequest* request,
+                  RecommendResponse* reply) override {
+   
+    size_t best_item = -1; 
+    recommend(global_eid, &best_item, (size_t)request->gender(), (size_t)request->age(), (size_t)request->occupation());
+    printf("The recommendation result: %d\n", best_item);
+
+    reply->set_best_ad(best_item);
+    return Status::OK;
+  }
+};
+
+
 
 /* Global EID shared by multiple threads */
 sgx_enclave_id_t global_eid = 0;
@@ -148,7 +178,7 @@ void print_error_message(sgx_status_t ret)
     }
     
     if (idx == ttl)
-        printf("Error code is 0x%X. Please refer to the \"Intel SGX SDK Developer Reference\" for more details.\n", ret);
+    	printf("Error code is 0x%X. Please refer to the \"Intel SGX SDK Developer Reference\" for more details.\n", ret);
 }
 
 /* Initialize the enclave:
@@ -231,12 +261,18 @@ void ocall_print_string(const char *str)
 
 
 void RunServer() {
-    int gender = 1;
-    int age = 2;
-    int occupation = 10;
-    size_t best_item = -1;
-    recommend(global_eid, &best_item, gender, age, occupation);
-    printf("%d\n", best_item);
+
+    std::string server_address("0.0.0.0:50051");
+    RecommendRequestImpl service;
+
+    ServerBuilder builder;
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    builder.RegisterService(&service);
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+    std::cout << "Server listening on " << server_address << std::endl;
+
+    server->Wait();
+    
 }
 
 
@@ -290,3 +326,4 @@ int SGX_CDECL main(int argc, char *argv[])
     getchar();
     return 0;
 }
+
