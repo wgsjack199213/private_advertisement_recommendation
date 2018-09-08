@@ -235,26 +235,27 @@ App/App.o: App/App.cpp
 # For grpc protobuf
 ####
 
-subdir = ./App
+#subdir = ./App
 
-export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+#export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 
-SOURCES = $(wildcard $(subdir)*.cc)
-SRCOBJS = $(patsubst %.cc,%.o,$(SOURCES))
-CC = g++
+#SOURCES = $(wildcard $(subdir)*.cc)
+#SRCOBJS = $(patsubst %.cc,%.o,$(SOURCES))
 
 App/recommend.grpc.pb.o:App/recommend.grpc.pb.cc
-	cd ./App && $(CC) -std=c++11 -I/usr/local/include -pthread -c recommend.grpc.pb.cc -o recommend.grpc.pb.o
+	cd ./App && $(CXX) -std=c++11 -I/usr/local/include -pthread -c recommend.grpc.pb.cc -o recommend.grpc.pb.o
 
 App/recommend.pb.o:App/recommend.pb.cc
-	cd ./App && $(CC) -std=c++11 -I/usr/local/include -pthread -c recommend.pb.cc -o recommend.pb.o
+	cd ./App && $(CXX) -std=c++11 -I/usr/local/include -pthread -c recommend.pb.cc -o recommend.pb.o
+
+#App/recommend%.o: App/recommend%.cc 
+#	$(GPP) -std=c++11 -I/usr/local/include -pthread -c $< -o $@
+
+GRPC_Link_Flags = -L/usr/local/lib -lgrpc++ -lgrpc -Wl,--no-as-needed -lprotobuf -lpthread -ldl -lssl
 
 $(App_Name): App/Enclave_u.o $(App_Cpp_Objects) App/recommend.grpc.pb.o App/recommend.pb.o
-	@$(CXX) $^ -L/usr/local/lib `pkg-config --libs grpc++ grpc` -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -lprotobuf -lpthread -ldl -lssl   -o $@ $(App_Link_Flags)
+	@$(CXX) $^   -o $@ $(App_Link_Flags) $(GRPC_Link_Flags)
 	@echo "LINK =>  $@"
-
-
-
 
 
 ############# end

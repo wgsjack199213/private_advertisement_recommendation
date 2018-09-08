@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     RecommendClient client(grpc::CreateChannel(
         "localhost:50051", grpc::InsecureChannelCredentials()));
     int gender = 1;
-    int age = 0;
+    int age = 3;
     int occupation = 3;
   
     int reply = client.Recommend(gender, age, occupation);  // The actual RPC call!
