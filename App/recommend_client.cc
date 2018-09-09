@@ -59,11 +59,23 @@ class RecommendClient {
  
 int main(int argc, char** argv) { 
     RecommendClient client(grpc::CreateChannel(
-        "localhost:50051", grpc::InsecureChannelCredentials()));
-    int gender = 1;
+        "0.0.0.0:50051", grpc::InsecureChannelCredentials()));
+    //"71.202.180.104:50051", grpc::InsecureChannelCredentials()));
+    
+    int gender = 0;
     int age = 3;
-    int occupation = 3;
-  
+    int occupation = 5;
+
+    if (argc < 4) {
+        std::cout << "insufficient number of input integers. Using the default values..." << std::endl;
+    } else {
+        gender = std::stoi(argv[1]), age = std::stoi(argv[2]), occupation = std::stoi(argv[3]);
+        std::cout << "Your input values:" 
+                  << gender << ' '
+                  << age << ' '
+                  << occupation << std::endl;
+    }
+ 
     int reply = client.Recommend(gender, age, occupation);  // The actual RPC call!
     std::cout << "client received: " << reply << std::endl;
  
