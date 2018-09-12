@@ -10,7 +10,7 @@ CC = g++
 	$(CC) -std=c++11 -I/usr/local/include -pthread -c $< -o $@
  
 all: client #server
- 
+
 client:	recommend.grpc.pb.o recommend.pb.o recommend_client.o
 	$(CC) $^ -L/usr/local/lib `pkg-config --libs grpc++ grpc` -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -lprotobuf -lpthread -ldl -lssl -o $@
  

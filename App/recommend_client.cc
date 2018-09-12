@@ -1,6 +1,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include "sgx_tcrypto.h"
+#include "sgx_error.h"
  
 #include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
