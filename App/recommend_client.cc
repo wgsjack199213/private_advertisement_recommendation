@@ -56,15 +56,20 @@ class RecommendClient {
  
   std::unique_ptr<RecommendService::Stub> stub_;
 };
+
+
+
  
 int main(int argc, char** argv) { 
     RecommendClient client(grpc::CreateChannel(
         "0.0.0.0:50051", grpc::InsecureChannelCredentials()));
     //"71.202.180.104:50051", grpc::InsecureChannelCredentials()));
     
-    int gender = 0;
-    int age = 3;
-    int occupation = 5;
+    int gender = 30;
+    int age = 89;
+    int occupation = 201;
+
+
 
     if (argc < 4) {
         std::cout << "insufficient number of input integers. Using the default values..." << std::endl;

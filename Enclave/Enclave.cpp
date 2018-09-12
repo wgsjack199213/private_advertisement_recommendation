@@ -34,6 +34,9 @@
 #include <stdio.h>      /* vsnprintf */
 #include <vector>
 
+#include "sgx_tcrypto.h"
+#include "sgx_error.h"
+
 #include "Enclave.h"
 #include "Enclave_t.h"  /* print_string */
 
@@ -77,7 +80,38 @@ float fm_predict(const float* order_1, const float* order_2, const size_t RANK, 
     return rating;
 }
 
-size_t recommend(int gender, int age, int occupation){
+
+sgx_status_t decrypt(int cipher_gender, int cipher_age, int cipher_occupation, int* gender, int* age, int* occupation) {
+
+    const uint32_t src_len = 3;
+    const uint8_t p_src[src_len] = {uint8_t(cipher_gender), uint8_t(cipher_age), uint8_t(cipher_occupation)};
+
+    const sgx_aes_ctr_128bit_key_t p_key = {0, 6, 0, 8, 0, 3, 3, 0,
+                                            79, 0, 15, 0, 0, 0, 4, 2};
+    uint8_t p_ctr[16] = {0};
+    const uint32_t ctr_inc_bits = 128;
+    uint8_t p_dst[src_len] = {0};
+
+    sgx_status_t ret_code = sgx_aes_ctr_decrypt(
+                        &p_key, p_src, src_len, p_ctr,
+                        ctr_inc_bits, p_dst);
+    if (ret_code != SGX_SUCCESS) {
+        return ret_code;
+    }
+
+    *gender = (int)p_dst[0];
+    *age = (int)p_dst[1];
+    *occupation = (int)p_dst[2];
+
+    return SGX_SUCCESS;
+}
+
+size_t recommend(int cipher_gender, int cipher_age, int cipher_occupation) {
+    int gender = 0, age = 0, occupation = 0;
+    sgx_status_t ret_code = decrypt(cipher_gender, cipher_age, cipher_occupation, &gender, &age, &occupation);
+    if (ret_code != SGX_SUCCESS) {
+        return -1;
+    }
 
     const size_t N = 98;
     const size_t RANK = 10;
