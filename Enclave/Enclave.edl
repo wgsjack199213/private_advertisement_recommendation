@@ -56,7 +56,7 @@ enclave {
      *  [string]: specifies 'str' is a NULL terminated buffer.
      */
     trusted {
-        public size_t recommend(int gender, int age, int occupation);
+        public int recommend(int gender, int age, int occupation);
     };
 
     untrusted {

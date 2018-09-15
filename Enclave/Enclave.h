@@ -45,7 +45,7 @@ extern "C" {
 
 float fm_predict(const float* order_1, const float* order_2, const size_t RANK, const float bias, const std::vector<int>* nzi);
 
-size_t recommend(int gender, int age, int occupation);
+int recommend(int gender, int age, int occupation);
 
 #if defined(__cplusplus)
 }

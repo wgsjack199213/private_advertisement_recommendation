@@ -63,11 +63,12 @@ class RecommendRequestImpl final : public RecommendService::Service {
   Status Recommend(ServerContext* context, const RecommendRequest* request,
                   RecommendResponse* reply) override {
    
-    size_t best_item = -1; 
-    recommend(global_eid, &best_item, (size_t)request->gender(), (size_t)request->age(), (size_t)request->occupation());
-    printf("The recommendation result: %d\n", best_item);
+    int best_item = -1; 
+    int ret_code = recommend(global_eid, &best_item, (size_t)request->gender(), (size_t)request->age(), (size_t)request->occupation());
+    printf("ret_code: %d, recommendation result: %d\n", ret_code, best_item);
 
     reply->set_best_ad(best_item);
+
     return Status::OK;
   }
 };

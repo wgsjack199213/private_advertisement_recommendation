@@ -106,11 +106,11 @@ sgx_status_t decrypt(int cipher_gender, int cipher_age, int cipher_occupation, i
     return SGX_SUCCESS;
 }
 
-size_t recommend(int cipher_gender, int cipher_age, int cipher_occupation) {
+int recommend(int cipher_gender, int cipher_age, int cipher_occupation) {
     int gender = 0, age = 0, occupation = 0;
     sgx_status_t ret_code = decrypt(cipher_gender, cipher_age, cipher_occupation, &gender, &age, &occupation);
     if (ret_code != SGX_SUCCESS) {
-        return -1;
+        return -ret_code;
     }
 
     const size_t N = 98;
@@ -133,13 +133,13 @@ size_t recommend(int cipher_gender, int cipher_age, int cipher_occupation) {
     const size_t n_items = N - N_GENDER - N_AGE - N_OCCUPATION - N_GENRE;
     
     if (gender >= N_GENDER || gender < 0) {
-        return -1;
+        return -2;
     }
     if (age >= N_AGE || age < 0) {
-        return -1;
+        return -3;
     }
     if (occupation >= N_OCCUPATION || occupation < 0) {
-        return -1;
+        return -4;
     }
 
     std::vector<int> non_zero_indices;
