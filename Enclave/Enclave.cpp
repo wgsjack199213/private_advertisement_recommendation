@@ -36,6 +36,7 @@
 
 #include "sgx_tcrypto.h"
 #include "sgx_error.h"
+#include "sgx_trts.h"
 
 #include "Enclave.h"
 #include "Enclave_t.h"  /* print_string */
@@ -61,15 +62,13 @@ float fm_predict(const float* order_1, const float* order_2, const size_t RANK, 
     float rating = bias;
 
     int n = (*nzi).size(); // number of non-zero indices
-    int i, j = 0;
-    for (i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         int index_1 = (*nzi).at(i);
         rating += order_1[index_1];
-        for (j = i+1; j < n; j++) {
+        for (int j = i+1; j < n; j++) {
             int index_2 = (*nzi)[j];
             float inner_product = 0.0;
-            int r = 0;
-            for (r = 0; r < RANK; r++) {
+            for (int r = 0; r < RANK; r++) {
                 inner_product += order_2[index_1 * RANK + r] * order_2[index_2 * RANK + r];
             }
             rating += inner_product;
@@ -150,15 +149,20 @@ int recommend(int cipher_gender, int cipher_age, int cipher_occupation) {
     
     size_t best_id = 0;
     float best_rating = 0.0;
+    
+    // We also return the 2nd and 3rd best item with some probability to add some noise
+    // to the recommendation result.
+    // To defend against model stealing.
+    size_t second_id = 0, third_id = 0;
+    float second_rating = 0.0, third_rating = 0.0;
 
-    int m;
-    for (m = 0; m < n_items; m++) { 
+    for (int m = 0; m < n_items; m++) { 
         // Compute the rating for the m-th item
 
         std::vector<int> nzi = non_zero_indices;
 
         // Add the movie.genre indices
-        for(auto it = genres[m].begin(); it != genres[m].end(); ++it) {
+        for (auto it = genres[m].begin(); it != genres[m].end(); ++it) {
             nzi.push_back(N_GENDER + N_AGE + N_OCCUPATION + *it);
         }
         //nzi.push_back(N_GENDER + N_AGE + N_OCCUPATION + 1);
@@ -166,14 +170,47 @@ int recommend(int cipher_gender, int cipher_age, int cipher_occupation) {
         // Add the movie.id
         nzi.push_back(N_GENDER + N_AGE + N_OCCUPATION + N_GENRE + m);
 
+        // Maintain the top-3 best items.
         float rating = fm_predict(order_1, (float*)order_2, RANK, bias, &nzi);
-        if(rating > best_rating) {
+        if (rating > best_rating) {
+            third_rating = second_rating;
+            third_id = second_id;
+            second_rating = best_rating;
+            second_id = best_id;
+
             best_rating = rating;
             best_id = m;
+        } else if (rating <= best_rating && rating > second_rating) {
+            third_rating = second_rating;
+            third_id = second_id;
+            
+            second_rating = rating;
+            second_id = m;
+        } else if (rating <= second_rating && rating > third_rating) {
+            third_rating = rating;
+            third_id = m;
         }
     }
 
-    return best_id; 
-
+    //return best_id; 
+    // To add some noise, we let:
+    // Pr[return best] = 0.5, Pr[return 2nd | not return best] = 2/3, Pr[return 3rd | not return best] = 1/3
+    
+    // We generate 2 random int number in the range [0, 256)
+    unsigned char r[2] = {0, 0};
+    ret_code = sgx_read_rand(r, 2);
+    if (ret_code != SGX_SUCCESS) {
+        return -1;
+    }
+    if (int(r[0]) >= 128) { 
+        // Pr = 0.5
+        return best_id;
+    } else if (int(r[1]) > 85) {
+        // Pr = 1/3
+        return second_id;
+    } else {
+        return third_id;
+    }
+    
 }
 
